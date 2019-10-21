@@ -4,19 +4,22 @@ void software_delay(unsigned long delay)
 	while (delay > 0) delay--;
 }
 
-unsigned long Delay = 0x100000; /*Delay Value*/
-unsigned long CNT_DIR = 0x00000000;
-unsigned long MODE_SW = 0x00000000;
-unsigned long counter1 = 0x00000000;
-unsigned long counter2 = 0x00000000;
-unsigned long voltagevalue =0x000000;
-unsigned long adcdata = 0x00000000;
+unsigned long CNT_DIR = 0x00;
+unsigned long MODE_SW = 0x00;
+unsigned long counter = 0x00;
+unsigned long voltagevalue =0x00;
+unsigned long adcdata = 0x00;
 unsigned long numArrayPortD[10] = {0xFE, 0xB0, 0xED, 0xF9, 0xB3, 0xDB, 0xDF, 0xF0, 0xFF, 0xFB};
 unsigned long numArrayPortC[10] = {0xBE, 0x30, 0xAD, 0xB9, 0x33, 0x9B, 0x9F, 0xB0, 0xBF, 0xBB};
-unsigned long upperADC = 0x00000000;
-unsigned long lowerADC = 0x00000000;
-unsigned long ADCvalueD = 0x00000000;
-unsigned long ADCvalueC = 0x00000000;
+unsigned long upperADC = 0x00;
+unsigned long lowerADC = 0x00;
+unsigned long ADCvalueD = 0x00;
+unsigned long ADCvalueC = 0x00;
+unsigned long upperCNT = 0x00;
+unsigned long lowerCNT = 0x00;
+unsigned long CNTvalueD = 0x00;
+unsigned long CNTvalueC = 0x00;
+
 
 int main(void)
 {
@@ -40,6 +43,8 @@ int main(void)
 	GPIOC_PDDR = 0x000001BF; /*Configure PORTC Pins 0-5 and 7-8 as Output*/
 	GPIOD_PDDR = 0x000000FF; /*Configure PORTD Pins 0-7 as Output*/
 
+	unsigned long Delay = 0x100000; /*Delay Value*/
+
 	while(1)
 	{
 		software_delay(Delay); /*Wait Delay Value*/
@@ -59,73 +64,36 @@ int ADC_read16b(void)
 void PORTA_IRQHandler(void)
 {
 	GPIOD_PDOR ^= (1UL << 7); //Toggle decimal point bit 7
-	adcdata = ADC_read16b();
-	MODE_SW = GPIOB_PDIR & 0x04;
-	CNT_DIR = GPIOB_PDIR & 0x08;
-
+	adcdata = ADC_read16b();//read value from AD convert
+	MODE_SW = GPIOB_PDIR & 0x04;//check Mode_sw
+	CNT_DIR = GPIOB_PDIR & 0x08;//check CNT_DIP
 	if(MODE_SW == 0)
 	{
-		voltagevalue = (adcdata*33)/((2*2*2*2*2*2*2*2*2*2*2*2*2*2*2*2)-1);
-		upperADC = voltagevalue/10;
-		lowerADC = voltagevalue-10*upperADC;
-
-		for(int n = 0; n < 10; n++)
-		{
-			if(upperADC == n)
-			{
-				ADCvalueD = numArrayPortD[n];
-			}
-		}
-		for(int n = 0; n < 10; n++)
-		{
-			if(lowerADC == n)
-			{
-				ADCvalueC = numArrayPortC[n];
-			}
-		}
+		voltagevalue = (adcdata*33)/65535;//conversion
+		upperADC = voltagevalue/10;//calculate the first digital for port D
+		lowerADC = voltagevalue-10*upperADC;//calculate the second digital for Port D
+		ADCvalueD = numArrayPortD[upperADC];//find the corresponding number figure to display
+		ADCvalueC = numArrayPortC[lowerADC];//find the corresponding number figure to display
 		GPIOD_PDOR = ADCvalueD;
-		GPIOC_PDOR = ADCvalueC;
+		GPIOC_PDOR = ADCvalueC;//output
 		software_delay(Delay);
 	}
 	else
 	{
 		if(CNT_DIR == 0)
 		{
-			if(counter1 == 9 && counter2 == 9)
+			counter+=1;
+			if (counter == 0x64)
 			{
-				counter1 = 0;
-				counter2 = 0;
+				counter = 0;//reset counter if counter = 100;
 			}
-			else if(counter2 == 9)
-			{
-				counter1++;
-				counter2 = 0;
-			}
-			else
-			{
-				counter2++;
-			}
-			GPIOC_PDOR = numArrayPortC[counter2];
-			GPIOD_PDOR = numArrayPortD[counter1];
-		}
-		else
-		{
-			if(counter1 == 0 && counter2 == 0)
-			{
-				counter1 = 9;
-				counter2 = 9;
-			}
-			else if(counter2 == 0)
-			{
-				counter1--;
-				counter2 = 9;
-			}
-			else
-			{
-				counter2--;
-			}
-			GPIOC_PDOR = numArrayPortC[counter2];
-			GPIOD_PDOR = numArrayPortD[counter1];
+			upperCNT = counter/10;//same procedure to display
+			lowerCNT = counter%10;
+			CNTvalueD = numarrayPortD[upperCNT];
+			CNTvalueC = numarrayPortC[lowerCNt];
+			GPIOD_PDOR = CNTvalueD;
+			GPIOC_PDOR = CNTvalueC;
+			software_delay(Delay);
 		}
 	}
 	PORTA_ISFR = (1 << 1); /* Clear ISFR for Port A, Pin 1*/
