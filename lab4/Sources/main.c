@@ -52,17 +52,17 @@ int main(void)
 		FTM3_C6SC = 0; // stop C6
 		t3 = FTM3_C6V; // third edge
 		if (t2 >= t1)
-			pulse_width = (nr_overflows >> 16) + (t2 - t1);
+			pulse_width = (nr_overflows >> 16) + (t2 - t1);//since detect falling edge, shift right instead 
 		else
 			pulse_width = ((nr_overflows-1) >> 16) + (t2 - t1);
-		period = t3 - t1;
+		period = t3 - t1;//calculate the period for one cycle
 		duty_cycle = 100 - 100 * pulse_width / period;
 		upper = duty_cycle / 10;
 		lower = duty_cycle % 10;
 		valueD = numArrayPortD[upper];
-		valueC = numArrayPortC[lower];
+		valueC = numArrayPortC[lower];//search the number to display
 		GPIOD_PDOR = valueD;
-		GPIOC_PDOR = valueC;
+		GPIOC_PDOR = valueC;// output
 		software_delay(Delay); /*Wait Delay Value*/
 	}
 	return 0;
