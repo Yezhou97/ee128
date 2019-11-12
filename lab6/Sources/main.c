@@ -94,10 +94,10 @@ int main(void)
 		}
 		printf("RAW Temperature value in decimal \t: %4d\n",temp);
 		len = sprintf(write, "RAW Temperature value in decimal \t: %4d\n",temp);
-		GPIOB_PDOR |= (1UL << 3);
+		GPIOB_PDOR |= (1UL << 3);//set PortB pin 3 high before call SendBlock
 		SM1_SendBlock(SM1_DeviceData, &write, len);
 		for(delay = 0; delay < 300000; delay++); //delay
-		GPIOB_PDOR &= ~(1UL << 3);
+		GPIOB_PDOR &= ~(1UL << 3);// set PortB pin 3 low after delay
 
 		// Set up registers for accelerometer and magnetometer values
 		if (FX1_WriteReg8(FX1_CTRL_REG_1, 0x00) != ERR_OK) {
