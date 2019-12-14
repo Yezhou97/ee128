@@ -105,7 +105,7 @@ unsigned char keypad_scan(void){
 			else row=4;//otherwise it is false triggering
 		}
 		if((row<4)&(col<4)){
-			return keypad[row][col];// return the vaule
+			return keypad[row][col];// return the value
 		}
 		else return 'N';// tell the main program to keep polling with keypad
 	}
